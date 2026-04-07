@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GigGuard AI — Worker Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       NAVIGATION BAR
+  ════════════════════════════════════════════════════════════════ -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <svg class="logo-icon" viewBox="0 0 34 34" fill="none">
+                <path d="M17 2L4 7.5V17C4 24.18 9.68 30.9 17 33C24.32 30.9 30 24.18 30 17V7.5L17 2Z" fill="#f5a523"
+                    fill-opacity="0.15" stroke="#f5a523" stroke-width="1.5" />
+                <path d="M12 17l3.5 3.5L22 12" stroke="#f5a523" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span class="logo-text">GigGuard <span>AI</span></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">Dashboard</a></li>
+            <li><a href="risk-monitor.html">Risk Monitor</a></li>
+            <li><a href="payout.html">Payout</a></li>
+        </ul>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div class="nav-status">
+                <span class="dot"></span>
+                Coverage Active
+            </div>
+            <button class="btn-logout" onclick="gigguardLogout()">⏻ Logout</button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       MAIN PAGE CONTENT
+  ════════════════════════════════════════════════════════════════ -->
+    <main class="page-container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="eyebrow">Worker Dashboard</div>
+            <h1>Your Protection Overview</h1>
+            <p>AI-powered coverage status and disruption risk for today's shift.</p>
+        </div>
+
+        <!-- Pipeline Flow -->
+        <div class="pipeline-flow" id="pipelineFlow">
+            <div class="pf-step">
+                <div class="pf-bubble" id="pf1">🌧</div>
+                <div class="pf-label" id="pfl1">Environmental<br>Conditions</div>
+            </div>
+            <div class="pf-line" id="pfl1x"></div>
+            <div class="pf-step">
+                <div class="pf-bubble" id="pf2">📊</div>
+                <div class="pf-label" id="pfl2">Risk Score<br>Computed</div>
+            </div>
+            <div class="pf-line" id="pfl2x"></div>
+            <div class="pf-step">
+                <div class="pf-bubble" id="pf3">🤖</div>
+                <div class="pf-label" id="pfl3">AI Decision<br>Explanation</div>
+            </div>
+            <div class="pf-line" id="pfl3x"></div>
+            <div class="pf-step">
+                <div class="pf-bubble" id="pf4">💸</div>
+                <div class="pf-label" id="pfl4">Payout<br>Decision</div>
+            </div>
+        </div>
+
+        <!-- API Status Bar -->
+        <div class="api-status-bar">
+            <span class="api-dot loading" id="apiDot"></span>
+            <span id="apiStatusText">Connecting to live AI engine…</span>
+        </div>
+
+        <!-- Dynamic Alert Banner -->
+        <div class="alert-banner alert-warning" id="alertBanner" style="display:none;">
+            <div class="alert-icon">⚠️</div>
+            <div>
+                <div class="alert-title" id="alertTitle">Disruption Alert Active</div>
+                <div class="alert-desc" id="alertDesc">Loading live data…</div>
+            </div>
+        </div>
+
+        <!-- Anomaly Alert (shown when anomaly_flag = true) -->
+        <div class="anomaly-panel hidden" id="anomalyPanel" style="margin-bottom:20px;">
+            <div class="anomaly-pulse"></div>
+            <div>
+                <div class="anomaly-title">🔬 Environmental Anomaly Detected</div>
+                <div class="anomaly-desc" id="anomalyDesc">AI engine flagged an unusual spike in environmental readings.
+                </div>
+            </div>
+        </div>
+
+        <!-- Worker Profile -->
+        <div class="worker-profile">
+            <div class="worker-avatar">RK</div>
+            <div class="worker-info">
+                <div class="worker-name" id="workerName">Ravi Kumar</div>
+                <div class="worker-meta">
+                    <span id="workerPlatform">Swiggy Delivery Partner</span>
+                    <span id="workerZone">Delhi NCR Zone</span>
+                    <span id="workerId">ID #SWG-09124</span>
+                </div>
+            </div>
+            <span class="stat-badge badge-green">✓ Active</span>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ROW 1 — Top Stats
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="grid-4" style="margin-bottom:16px;">
+
+            <div class="card stat-card">
+                <div class="card-title">Current Plan</div>
+                <div class="stat-value" style="font-size:22px;" id="planName">Weekly Shield</div>
+                <div class="stat-label">₹49 / week · Auto-renew</div>
+                <span class="stat-badge badge-green">✓ Premium Tier</span>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-title">Coverage Cap</div>
+                <div class="stat-value amber" id="coverageCap">₹2,500</div>
+                <div class="stat-label">Max payout per event</div>
+                <span class="stat-badge badge-amber">Per Event</span>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-title">Worker Status</div>
+                <div class="stat-value green">Active</div>
+                <div class="stat-label">Online · Shift active</div>
+                <span class="stat-badge badge-green">⚡ On Shift</span>
+            </div>
+
+            <div class="card stat-card">
+                <div class="card-title">Days Covered</div>
+                <div class="stat-value" id="daysCovered">47</div>
+                <div class="stat-label">Total protected work days</div>
+                <span class="stat-badge badge-blue" id="memberSince">Since Jan 2025</span>
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ROW 2 — Risk Card + Payout Card
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="grid-3" style="margin-bottom:16px;">
+
+            <!-- Risk Card -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-title">Live Disruption Risk — Today</div>
+
+                <!-- Environmental readings -->
+                <div class="grid-3" style="margin-bottom:20px;">
+                    <div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">🌧 Rainfall</div>
+                        <div style="font-family:var(--font-display); font-size:22px; font-weight:800; color:#4e9eff;">
+                            <span id="rainfallVal">—</span>
+                            <span style="font-size:13px; font-weight:400; color:var(--text-secondary);"> mm/hr</span>
+                        </div>
+                        <div style="font-size:11px; margin-top:4px; color:var(--text-muted);" id="rainfallBand">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">💨 AQI</div>
+                        <div style="font-family:var(--font-display); font-size:22px; font-weight:800; color:#f5a523;">
+                            <span id="aqiVal">—</span>
+                            <span style="font-size:13px; font-weight:400; color:var(--text-secondary);"> µg/m³</span>
+                        </div>
+                        <div style="font-size:11px; margin-top:4px; color:var(--text-muted);" id="aqiBand">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">🌬 Wind</div>
+                        <div
+                            style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--text-primary);">
+                            <span id="windVal">—</span>
+                            <span style="font-size:13px; font-weight:400; color:var(--text-secondary);"> km/h</span>
+                        </div>
+                        <div style="font-size:11px; margin-top:4px; color:var(--text-muted);" id="windBand">—</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Risk Score Bar -->
+                <div class="score-bar-wrap">
+                    <div class="score-bar-label">
+                        <span>Disruption Risk Score
+                            <span
+                                style="margin-left:8px; font-size:11px; padding:2px 8px; border-radius:99px; font-weight:700;"
+                                id="riskLevelBadge" class="badge-amber">—</span>
+                        </span>
+                        <span id="riskScoreDisplay" style="font-weight:700;">—</span>
+                    </div>
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill fill-amber" id="riskScoreBar" style="width:0%;"></div>
+                    </div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-muted); margin-top:5px;">
+                        <span>Low</span><span>Medium</span><span>High</span><span>Critical</span>
+                    </div>
+                </div>
+
+                <!-- Primary Hazard + Confidence -->
+                <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                    <span style="font-size:12px; color:var(--text-secondary);">
+                        Primary hazard: <strong id="primaryHazard" style="color:var(--text-primary);">—</strong>
+                    </span>
+                    <span style="font-size:12px; color:var(--text-secondary);">
+                        Confidence: <strong id="confidenceScore" style="color:var(--text-primary);">—</strong>
+                        <span id="confidenceLabel" style="color:var(--text-muted); font-size:11px;"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Payout Status Card -->
+            <div class="card">
+                <div class="card-title">Payout Status</div>
+                <div style="text-align:center; padding:10px 0 6px;">
+                    <div id="payoutStatusIcon"
+                        style="width:52px; height:52px; border-radius:50%; background:var(--green-dim); border:2px solid rgba(34,217,122,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:22px;">
+                        ✓</div>
+                    <div id="payoutStatusLabel"
+                        style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--green); margin-bottom:4px;">
+                        Payout Triggered</div>
+                    <div id="payoutTierLabel" style="font-size:11px; color:var(--text-muted);">—</div>
+                </div>
+                <div class="divider"></div>
+
+                <!-- Payout Breakdown -->
+                <div class="payout-breakdown">
+                    <div class="payout-line">
+                        <span class="p-key">Gross Payout</span>
+                        <span class="p-val" id="grossPayout">—</span>
+                    </div>
+                    <div class="payout-line deduct">
+                        <span class="p-key">— Platform Fee (10%)</span>
+                        <span class="p-val" id="platformFee">—</span>
+                    </div>
+                    <div class="payout-line deduct">
+                        <span class="p-key">— Risk Loading</span>
+                        <span class="p-val" id="riskLoading">—</span>
+                    </div>
+                    <div class="payout-line deduct">
+                        <span class="p-key">— Freq. Adjustment</span>
+                        <span class="p-val" id="claimAdj">—</span>
+                    </div>
+                    <div class="payout-line final-line">
+                        <span class="p-key">Final Transfer</span>
+                        <span class="p-val" id="finalPayout">—</span>
+                    </div>
+                </div>
+
+                <a href="payout.html" style="display:block; text-align:center; margin-top:14px; padding:10px;
+           background:rgba(245,165,35,0.1); border:1px solid rgba(245,165,35,0.25);
+           border-radius:var(--radius-sm); font-size:12.5px; font-weight:600;
+           color:var(--amber); text-decoration:none;">
+                    View Full Payout Details →
+                </a>
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ROW 3 — AI Intelligence: Trend | Anomaly | Predicted
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="grid-3" style="margin-bottom:16px;">
+
+            <!-- Trend Analysis Card -->
+            <div class="card">
+                <div class="card-title">📈 AI Trend Analysis</div>
+                <div style="text-align:center; padding:8px 0 4px;">
+                    <div id="trendBadge" class="trend-badge trend-stable" style="display:inline-flex; margin:0 auto;">
+                        <span class="trend-arrow" id="trendArrow">→</span>
+                        <span id="trendLabel">Stable</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:10px;">
+                        Velocity: <strong id="trendVelocity" style="color:var(--text-secondary);">—</strong>
+                        &nbsp;·&nbsp; R²: <strong id="rSquared" style="color:var(--text-secondary);">—</strong>
+                    </div>
+                </div>
+                <!-- Mini sparkline -->
+                <div class="sparkline-wrap" id="sparkline">
+                    <!-- Bars injected by JS -->
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px; text-align:center;">
+                    Last 10 risk score observations
+                </div>
+            </div>
+
+            <!-- Anomaly Detection Card -->
+            <div class="card">
+                <div class="card-title">🔬 Anomaly Detection</div>
+                <div style="text-align:center; padding:8px 0 4px;">
+                    <div id="anomalyStatusIcon" style="font-size:36px; margin-bottom:8px;">✅</div>
+                    <div id="anomalyStatusText"
+                        style="font-family:var(--font-display); font-size:14px; font-weight:700; color:var(--green);">
+                        No Anomaly
+                    </div>
+                    <div id="anomalySeverityBadge" class="stat-badge badge-green"
+                        style="margin:10px auto 0; display:inline-flex;">
+                        NONE
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-muted);">
+                    Z-score max: <strong id="maxZScore" style="color:var(--text-secondary);">0.00</strong>
+                </div>
+                <div id="anomalyDetailsList" style="margin-top:8px; font-size:12px; color:var(--text-secondary);">
+                    All sensor readings within normal range.
+                </div>
+            </div>
+
+            <!-- Predicted Risk Card -->
+            <div class="card">
+                <div class="card-title">🤖 AI Predicted Risk</div>
+                <div class="predicted-score-display">
+                    <div class="predicted-number" id="predictedScore">—</div>
+                    <div class="predicted-label">Predicted Score (next ~15 min)</div>
+                    <div class="predicted-level-badge" id="predictedLevelBadge">— Level</div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary);">
+                    <div style="margin-bottom:6px;">Current score:
+                        <strong id="currentScoreSmall" style="color:var(--text-primary);">—</strong>
+                    </div>
+                    <div id="predictionDelta" style="font-size:11.5px; color:var(--text-muted);">
+                        Awaiting data…
+                    </div>
+                </div>
+                <!-- Predicted bar -->
+                <div class="score-bar-wrap" style="margin-top:12px;">
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill fill-blue" id="predictedBar" style="width:0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         AI INSIGHTS PANEL (full-width) — decision_explanation
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="ai-insights-panel">
+            <div class="ai-panel-header">
+                <span class="ai-tag">⚡ AI Engine</span>
+                <h3>Decision Intelligence</h3>
+            </div>
+            <div class="ai-reason-label">DECISION EXPLANATION</div>
+            <div class="ai-explanation" id="decisionExplanation">
+                Loading AI reasoning…
+            </div>
+            <div class="ai-reason-label">RISK CATEGORY REASON</div>
+            <div class="ai-reason" id="riskCategoryReason">
+                Loading risk categorisation…
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ROW 4 — Actuarial Model | Fraud Intelligence
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="grid-2" style="margin-bottom:16px;">
+
+            <!-- Actuarial Panel -->
+            <div class="card">
+                <div class="card-title">📊 Actuarial Model
+                    <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Actuarial model estimates expected losses and adjusts premiums dynamically based on live risk scores.</span></span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">Expected Loss
+                            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">P(event) × Coverage Cap — average payout per policy period.</span></span>
+                        </div>
+                        <div class="metric-value amber" id="expectedLoss">—</div>
+                        <div class="metric-sub">P(event) × coverage cap</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Event Probability
+                            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Probability that current conditions trigger a payout event.</span></span>
+                        </div>
+                        <div class="metric-value" id="eventProbability">—</div>
+                        <div class="metric-sub">at current risk state</div>
+                        <div class="act-prob-bar-track"><div class="act-prob-bar-fill" id="eventProbBar" style="width:0%;"></div></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Dynamic Premium</div>
+                        <div class="metric-value" id="dynamicPremium">—</div>
+                        <div class="metric-sub">risk-adjusted rate</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Claims Reserve</div>
+                        <div class="metric-value" id="claimsReserve">—</div>
+                        <div class="metric-sub">solvency buffer per policy</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+                    <span>Loss Ratio: <strong id="lossRatio" style="color:var(--text-primary);">—</strong></span>
+                    <span id="premiumAdequacyBadge"></span>
+                </div>
+            </div>
+
+            <!-- Fraud Intelligence Panel -->
+            <div class="card">
+                <div class="card-title">🛡 Fraud Intelligence</div>
+                <div class="fraud-score-display">
+                    <div class="fraud-score-number" id="fraudScoreDisplay" style="color:var(--green);">0.00</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Fraud Score (0.0 – 1.0)</div>
+                    <div class="fraud-score-track">
+                        <div class="fraud-score-fill fill-green" id="fraudScoreBar" style="width:0%;"></div>
+                    </div>
+                    <div class="verdict-badge verdict-SAFE" id="verdictBadge">● SAFE</div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">
+                    Auto-approve: <strong id="autoApprove" style="color:var(--green);">Yes</strong>
+                    &nbsp;·&nbsp; Flags triggered: <strong id="flagCount" style="color:var(--text-primary);">0</strong>
+                </div>
+                <div class="fraud-explanation-text" id="fraudExplanation">
+                    Loading fraud analysis…
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ROW 5 — Plan Details | Activity Log
+    ══════════════════════════════════════════════════════════════ -->
+        <div class="grid-2">
+
+            <div class="card">
+                <div class="card-title">Plan Details — Weekly Shield</div>
+                <div class="plan-row"><span class="plan-key">Plan Type</span><span class="plan-val">Parametric Weather
+                        Insurance</span></div>
+                <div class="plan-row"><span class="plan-key">Premium</span><span class="plan-val">₹49 / week</span>
+                </div>
+                <div class="plan-row"><span class="plan-key">Coverage Cap</span><span class="plan-val">₹2,500 per
+                        event</span></div>
+                <div class="plan-row"><span class="plan-key">Trigger: Rainfall</span><span class="plan-val">≥ 50
+                        mm/hr</span></div>
+                <div class="plan-row"><span class="plan-key">Trigger: AQI</span><span class="plan-val">≥ 250
+                        µg/m³</span></div>
+                <div class="plan-row"><span class="plan-key">Trigger: Wind</span><span class="plan-val">≥ 45 km/h</span>
+                </div>
+                <div class="plan-row"><span class="plan-key">Claim Process</span><span class="plan-val">Fully
+                        Automatic</span></div>
+                <div class="plan-row"><span class="plan-key">Valid Until</span><span class="plan-val"
+                        id="validUntil">Mar 16, 2026</span></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="live-dot"></span> Live Activity Log</div>
+                <div class="event-log" id="activityLog">
+                    <div class="event-item">
+                        <div class="event-dot" style="background:var(--text-muted);"></div>
+                        <div class="event-time">—</div>
+                        <div class="event-desc">Connecting to AI engine…</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        GigGuard AI · AI-Powered Parametric Insurance · v4 · Built with ❤️ for Hackathon 2025
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT — API Fetch + DOM Population
+  ════════════════════════════════════════════════════════════════ -->
+    <script>
+        /* ── Auth guard ───────────────────────────────────────────────────────── */
+        if (!sessionStorage.getItem('gigguard_auth')) { window.location.replace('login.html'); }
+        function gigguardLogout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+
+        /* ── Helpers ─────────────────────────────────────────────────────────── */
+        const $ = id => document.getElementById(id);
+        const fmt = n => n !== undefined && n !== null ? '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
+        const pct = n => n !== undefined && n !== null ? Math.round(n * 100) + '%' : '—';
+
+        // Colour a risk score (0–1) into CSS class
+        function riskColour(score) {
+            if (score < 0.35) return 'fill-green';
+            if (score < 0.60) return 'fill-amber';
+            return 'fill-red';
+        }
+        function riskTextColour(level) {
+            const map = { LOW: 'var(--green)', MEDIUM: 'var(--amber)', HIGH: 'var(--red)', CRITICAL: 'var(--red)' };
+            return map[level] || 'var(--amber)';
+        }
+
+        /* ── animateNumber: count up from current to target ──────────────────── */
+        function animateNumber(el, target, prefix, suffix, decimals) {
+            if (!el) return;
+            const start = 0, duration = 900;
+            const startTime = performance.now();
+            const fmt = v => prefix + (decimals ? v.toFixed(decimals) : Math.round(v).toLocaleString('en-IN')) + suffix;
+            function step(now) {
+                const p = Math.min((now - startTime) / duration, 1);
+                const ease = 1 - Math.pow(1 - p, 3);
+                el.textContent = fmt(start + (target - start) * ease);
+                if (p < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        /* ── renderExplanation: generate rich AI explanation ─────────────────── */
+        function renderExplanation(risk, payout) {
+            const score = Math.round((risk.risk_score || 0) * 100);
+            const rf = risk.rainfall || 0;
+            const aqi = risk.aqi || 0;
+            const wind = risk.wind_speed || 0;
+            const pred = Math.round((risk.predicted_risk_score || risk.risk_score || 0) * 100);
+            const conf = Math.round((risk.confidence?.score || 0) * 100);
+            const trend = risk.trend || 'stable';
+            const level = risk.risk_level || 'LOW';
+
+            let parts = [];
+            if (rf >= 50) parts.push(`Heavy rainfall (${rf} mm/hr)`);
+            else if (rf > 0) parts.push(`Moderate rainfall (${rf} mm/hr)`);
+            if (aqi >= 250) parts.push(`hazardous AQI ${aqi} µg/m³`);
+            else if (aqi >= 100) parts.push(`poor AQI ${aqi} µg/m³`);
+            if (wind >= 45) parts.push(`strong wind (${wind} km/h)`);
+
+            let narrative = parts.length
+                ? parts.join(', ') + ` increased disruption probability to <strong>${score}%</strong>.`
+                : `Current conditions show a risk score of <strong>${score}/100</strong>.`;
+
+            if (payout && payout.triggered)
+                narrative += ` This triggered a <strong>${payout.tier_label || 'MILD'}</strong> tier payout (${Math.round((payout.payout_percentage || 0) * 100)}% of coverage cap).`;
+
+            if (trend === 'increasing')
+                narrative += ` ↑ Risk is trending upward — AI predicts escalation to <strong>${pred}/100</strong> in ~15 min.`;
+            else if (trend === 'decreasing')
+                narrative += ` ↓ Risk is easing — AI predicts score will drop to <strong>${pred}/100</strong>.`;
+
+            return { narrative, conf, factors: risk.anomaly_details || [] };
+        }
+
+        /* ── updateRiskUI: apply risk-level colour class to a card ───────────── */
+        function updateRiskUI(level, cardEl) {
+            if (!cardEl) return;
+            cardEl.classList.remove('card-critical', 'card-warning');
+            if (level === 'CRITICAL' || level === 'HIGH') cardEl.classList.add('card-critical');
+            else if (level === 'MEDIUM') cardEl.classList.add('card-warning');
+        }
+
+        /* ── updatePipelineFlow ───────────────────────────────────────────────── */
+        function updatePipelineFlow(step) {
+            for (let i = 1; i <= 4; i++) {
+                const b = $('pf' + i), l = $('pfl' + i);
+                if (!b) continue;
+                if (i < step) { b.classList.add('done'); b.classList.remove('active'); if(l) { l.classList.add('done'); l.classList.remove('active'); } }
+                else if (i === step) { b.classList.add('active'); b.classList.remove('done'); if(l) { l.classList.add('active'); l.classList.remove('done'); } }
+                else { b.classList.remove('done','active'); if(l) l.classList.remove('done','active'); }
+            }
+            // connector lines
+            for (let i = 1; i <= 3; i++) {
+                const ln = $('pfl' + i + 'x');
+                if (!ln) continue;
+                ln.classList.toggle('done', i < step);
+                ln.classList.toggle('active', i === step - 1);
+            }
+        }
+
+        /* ── API fetch with demo fallback ─────────────────────────────────────── */
+        async function loadDashboard() {
+            setApiStatus('loading', 'Connecting to AI engine…');
+            updatePipelineFlow(1);
+
+            let data;
+            try {
+                const res = await fetch('http://127.0.0.1:8000/dashboard', { signal: AbortSignal.timeout(5000) });
+                if (!res.ok) throw new Error('Bad response');
+                data = await res.json();
+                setApiStatus('live', 'Live AI engine connected · ' + (data.last_updated || ''));
+            } catch (e) {
+                setApiStatus('offline', 'API offline — showing demo data');
+                data = getDemoData();
+            }
+
+            updatePipelineFlow(2);
+            populateDashboard(data);
+        }
+
+        function setApiStatus(state, msg) {
+            const dot = $('apiDot');
+            const text = $('apiStatusText');
+            dot.className = 'api-dot ' + state;
+            text.textContent = msg;
+        }
+
+        /* ── Main populator ───────────────────────────────────────────────────── */
+        function populateDashboard(d) {
+            const risk = d.current_risk;
+            const payout = d.payout_status;
+            const fraud = payout.fraud_check || {};
+            const act = d.actuarial || {};
+            const worker = d.worker || {};
+
+            // Worker info
+            if (worker.name) $('workerName').textContent = worker.name;
+            if (worker.platform) $('workerPlatform').textContent = worker.platform + ' Delivery Partner';
+            if (worker.zone) $('workerZone').textContent = worker.zone;
+            if (worker.id) $('workerId').textContent = 'ID #' + worker.id;
+            if (worker.days_covered) $('daysCovered').textContent = worker.days_covered;
+            if (worker.member_since) $('memberSince').textContent = 'Since ' + worker.member_since;
+            if (d.plan && d.plan.valid_until) $('validUntil').textContent = d.plan.valid_until;
+
+            // ── Environmental readings ───────────────────────────────────────────
+            $('rainfallVal').textContent = risk.rainfall ?? '—';
+            $('aqiVal').textContent = risk.aqi ?? '—';
+            $('windVal').textContent = risk.wind_speed ?? '—';
+            $('rainfallBand').textContent = risk.imd_bands?.rainfall ?? '—';
+            $('aqiBand').textContent = risk.imd_bands?.aqi ?? '—';
+            $('windBand').textContent = risk.imd_bands?.wind_speed ?? '—';
+
+            // Colour coding for bands
+            const rainfallDanger = ['heavy', 'very_heavy', 'extreme'].includes(risk.imd_bands?.rainfall);
+            const aqiDanger = ['very_poor', 'severe'].includes(risk.imd_bands?.aqi);
+            if (rainfallDanger) $('rainfallBand').style.color = 'var(--red)';
+            if (aqiDanger) $('aqiBand').style.color = 'var(--amber)';
+
+            // ── Risk score ─────────────────────────────────────────────────────
+            const score = risk.risk_score ?? 0;
+            const level = risk.risk_level ?? 'LOW';
+            const scorePercent = Math.round(score * 100);
+
+            $('riskScoreDisplay').textContent = scorePercent + ' / 100';
+            $('riskScoreDisplay').style.color = riskTextColour(level);
+
+            const bar = $('riskScoreBar');
+            bar.className = 'score-bar-fill ' + riskColour(score);
+            setTimeout(() => { bar.style.width = scorePercent + '%'; }, 300);
+
+            const levelBadge = $('riskLevelBadge');
+            levelBadge.textContent = level;
+            const lvlClass = { LOW: 'badge-green', MEDIUM: 'badge-amber', HIGH: 'badge-red', CRITICAL: 'badge-red' };
+            levelBadge.className = 'stat-badge ' + (lvlClass[level] || 'badge-amber');
+
+            $('primaryHazard').textContent = risk.primary_hazard ?? '—';
+            $('confidenceScore').textContent = risk.confidence?.score !== undefined
+                ? (Math.round(risk.confidence.score * 100) + '%') : '—';
+            $('confidenceLabel').textContent = ' (' + (risk.confidence?.label ?? '') + ')';
+
+            // ── Alert banner ────────────────────────────────────────────────────
+            const banner = $('alertBanner');
+            if (payout.triggered) {
+                banner.style.display = 'flex';
+                $('alertTitle').textContent = 'Disruption Alert — ' + level;
+                $('alertDesc').innerHTML = 'Risk score <strong>' + scorePercent + '/100</strong>. '
+                    + 'Payout threshold met — <strong>' + (payout.tier_label || 'MILD') + '</strong> tier activated. '
+                    + (risk.risk_trend?.message || '');
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // ── Payout card ─────────────────────────────────────────────────────
+            const triggered = payout.triggered;
+            $('payoutStatusIcon').textContent = triggered ? '✓' : '—';
+            $('payoutStatusIcon').style.background = triggered ? 'var(--green-dim)' : 'var(--bg-base)';
+            $('payoutStatusLabel').textContent = triggered ? 'Payout Triggered' : 'No Payout Yet';
+            $('payoutStatusLabel').style.color = triggered ? 'var(--green)' : 'var(--text-muted)';
+            $('payoutTierLabel').textContent = payout.tier_label ? payout.tier_label + ' tier · ' + pct(payout.payout_percentage) + ' of cap' : '—';
+            $('grossPayout').textContent = fmt(payout.gross_payout);
+            $('platformFee').textContent = fmt(payout.platform_fee);
+            $('riskLoading').textContent = payout.risk_loading !== undefined ? (Math.round(payout.risk_loading * 100) + '% applied') : '—';
+            $('claimAdj').textContent = payout.claim_adjustment !== undefined ? (Math.round(payout.claim_adjustment * 100) + '% of net') : '—';
+            $('finalPayout').textContent = fmt(payout.final_payout ?? payout.effective_payout);
+
+            // ── Trend card ──────────────────────────────────────────────────────
+            const trend = risk.trend || 'stable'; // increasing | stable | decreasing
+            const trendConfig = {
+                increasing: { arrow: '↑', label: 'Increasing', cls: 'trend-up' },
+                stable: { arrow: '→', label: 'Stable', cls: 'trend-stable' },
+                decreasing: { arrow: '↓', label: 'Decreasing', cls: 'trend-down' },
+            };
+            const tc = trendConfig[trend] || trendConfig.stable;
+            $('trendArrow').textContent = tc.arrow;
+            $('trendLabel').textContent = tc.label;
+            const badge = $('trendBadge');
+            badge.className = 'trend-badge ' + tc.cls;
+
+            $('trendVelocity').textContent = risk.trend_velocity !== undefined ? risk.trend_velocity.toFixed(4) : '—';
+            $('rSquared').textContent = risk.r_squared !== undefined ? risk.r_squared.toFixed(3) : '—';
+
+            // Sparkline — build from single score as demo (real usage: keep a local array)
+            buildSparkline(score, level);
+
+            // ── Anomaly card ────────────────────────────────────────────────────
+            const anomaly = risk.anomaly_flag;
+            const anomalySev = risk.anomaly_severity || 'NONE';
+
+            if (anomaly) {
+                $('anomalyPanel').classList.remove('hidden');
+                const details = (risk.anomaly_details || []).join(', ') || 'Unknown spike';
+                $('anomalyDesc').textContent = 'Detected: ' + details + ' · Z-score: ' + (risk.max_z_score ?? '—');
+                $('anomalyStatusIcon').textContent = '🚨';
+                $('anomalyStatusText').textContent = 'Anomaly Detected';
+                $('anomalyStatusText').style.color = 'var(--red)';
+                $('anomalySeverityBadge').textContent = anomalySev;
+                $('anomalySeverityBadge').className = 'stat-badge ' + (anomalySev === 'SEVERE' ? 'badge-red' : 'badge-amber');
+            } else {
+                $('anomalyPanel').classList.add('hidden');
+                $('anomalyStatusIcon').textContent = '✅';
+                $('anomalyStatusText').textContent = 'No Anomaly';
+                $('anomalyStatusText').style.color = 'var(--green)';
+                $('anomalySeverityBadge').textContent = 'NONE';
+                $('anomalySeverityBadge').className = 'stat-badge badge-green';
+            }
+            $('maxZScore').textContent = (risk.max_z_score ?? 0).toFixed(2);
+            $('anomalyDetailsList').textContent = anomaly
+                ? (risk.anomaly_details || []).join(' · ')
+                : 'All sensor readings within normal range.';
+
+            // ── Predicted risk card ─────────────────────────────────────────────
+            const pred = risk.predicted_risk_score ?? score;
+            const predLevel = risk.predicted_risk_level ?? level;
+            const predPct = Math.round(pred * 100);
+
+            $('predictedScore').textContent = predPct;
+            $('predictedScore').style.color = riskTextColour(predLevel);
+            $('predictedLevelBadge').textContent = predLevel + ' level';
+            $('currentScoreSmall').textContent = scorePercent + ' / 100';
+
+            const delta = pred - score;
+            const deltaStr = (delta >= 0 ? '↑ +' : '↓ ') + Math.abs(Math.round(delta * 100)) + ' pts';
+            $('predictionDelta').textContent = 'Change: ' + deltaStr + ' from current score';
+            $('predictionDelta').style.color = delta > 0.05 ? 'var(--red)' : (delta < -0.05 ? 'var(--green)' : 'var(--text-muted)');
+
+            const predBar = $('predictedBar');
+            predBar.className = 'score-bar-fill ' + riskColour(pred);
+            setTimeout(() => { predBar.style.width = predPct + '%'; }, 500);
+
+            // ── AI Insights panel (dynamic explanation) ──────────────────────────
+            updatePipelineFlow(3);
+            const exp = renderExplanation(risk, payout);
+            const expEl = $('decisionExplanation');
+            expEl.innerHTML = `<div class="ai-conf-row"><span class="ai-conf-badge"><span class="pulse-dot"></span> Confidence: ${exp.conf}%</span><span style="font-size:11px;color:var(--text-muted);">Primary hazard: <strong style="color:var(--text-primary);">${risk.primary_hazard || '—'}</strong></span></div>` + exp.narrative;
+            $('riskCategoryReason').textContent = risk.risk_category_reason || 'Risk category analysis not available.';
+
+            // ── Payout pipeline step ─────────────────────────────────────────────
+            if (payout.triggered) updatePipelineFlow(4);
+
+            // ── Apply critical glow ─────────────────────────────────────────────
+            updateRiskUI(level, document.querySelector('.card'));
+
+            // ── Actuarial panel ──────────────────────────────────────────────────
+            $('expectedLoss').textContent = fmt(act.expected_loss);
+            const evProb = act.event_probability !== undefined ? act.event_probability : 0;
+            $('eventProbability').textContent = evProb ? Math.round(evProb * 100) + '%' : '—';
+            setTimeout(() => { const eb = $('eventProbBar'); if(eb) eb.style.width = Math.round(evProb * 100) + '%'; }, 500);
+            $('dynamicPremium').textContent = fmt(act.dynamic_premium);
+            $('claimsReserve').textContent = fmt(act.claims_reserve);
+            $('lossRatio').textContent = act.expected_loss_ratio !== undefined ? act.expected_loss_ratio.toFixed(2) : '—';
+            // Premium adequacy badge
+            const adq = act.premium_adequacy || '';
+            const adqCls = adq.includes('UNDER') ? 'adequacy-under' : adq.includes('OVER') ? 'adequacy-over' : 'adequacy-ok';
+            const adqBadge = $('premiumAdequacyBadge');
+            if(adqBadge) adqBadge.innerHTML = `<span class="adequacy-badge ${adqCls}">${adq || '—'}</span>`;
+
+            // ── Fraud panel ──────────────────────────────────────────────────────
+            const fs = fraud.fraud_score ?? 0;
+            const verdict = fraud.verdict || 'SAFE';
+            $('fraudScoreDisplay').textContent = fs.toFixed(2);
+            $('fraudScoreDisplay').style.color = fs > 0.50 ? 'var(--red)' : (fs > 0.25 ? 'var(--amber)' : 'var(--green)');
+
+            const fraudBar = $('fraudScoreBar');
+            fraudBar.className = 'fraud-score-fill ' + (fs > 0.50 ? 'fill-red' : (fs > 0.25 ? 'fill-amber' : 'fill-green'));
+            setTimeout(() => { fraudBar.style.width = (fs * 100) + '%'; }, 400);
+
+            const vBadge = $('verdictBadge');
+            vBadge.textContent = '● ' + verdict;
+            vBadge.className = 'verdict-badge verdict-' + verdict;
+
+            $('autoApprove').textContent = fraud.auto_approve ? 'Yes' : 'No';
+            $('autoApprove').style.color = fraud.auto_approve ? 'var(--green)' : 'var(--red)';
+            $('flagCount').textContent = (fraud.flags || []).length;
+            $('fraudExplanation').textContent = fraud.fraud_explanation || fraud.reason || 'No fraud signals detected.';
+
+            // ── Activity log ─────────────────────────────────────────────────────
+            buildActivityLog(risk, payout, d.last_updated);
+
+            // ── Animate all score bars ────────────────────────────────────────────
+            document.querySelectorAll('.score-bar-fill').forEach(el => {
+                const target = el.style.width;
+                if (!target || target === '0%') return;
+                el.style.width = '0%';
+                setTimeout(() => { el.style.width = target; }, 300);
+            });
+        }
+
+        /* ── Sparkline builder ────────────────────────────────────────────────── */
+        // Store rolling scores in sessionStorage for sparkline continuity
+        function buildSparkline(currentScore, level) {
+            const key = 'gg_sparkline';
+            let history = JSON.parse(sessionStorage.getItem(key) || '[]');
+            history.push(currentScore);
+            if (history.length > 10) history = history.slice(-10);
+            sessionStorage.setItem(key, JSON.stringify(history));
+
+            const container = $('sparkline');
+            container.innerHTML = '';
+            // Pad to 10 bars
+            const padded = Array(10 - history.length).fill(0).concat(history);
+            padded.forEach(score => {
+                const bar = document.createElement('div');
+                bar.className = 'spark-bar ' + (score > 0.6 ? 'high' : score > 0.35 ? 'medium' : 'low');
+                bar.style.height = Math.max(4, Math.round(score * 32)) + 'px';
+                container.appendChild(bar);
+            });
+        }
+
+        /* ── Activity log builder ─────────────────────────────────────────────── */
+        function buildActivityLog(risk, payout, timestamp) {
+            const log = $('activityLog');
+            const now = timestamp ? timestamp.split(' ')[1] : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+            const entries = [];
+
+            if (payout.triggered) {
+                entries.push({ color: 'var(--green)', time: now, text: `<strong>Payout triggered</strong> — ${payout.tier_label} tier · ${fmt(payout.final_payout)} initiated.` });
+            }
+            if (risk.anomaly_flag) {
+                entries.push({ color: 'var(--red)', time: now, text: `<strong>Anomaly detected</strong> — ${(risk.anomaly_details || []).join(', ')} (Z=${risk.max_z_score?.toFixed(2)}).` });
+            }
+            if (risk.trend === 'increasing') {
+                entries.push({ color: 'var(--amber)', time: now, text: `<strong>Risk trending up</strong> — slope +${(risk.trend_velocity || 0).toFixed(4)}/step. Predicted: ${Math.round((risk.predicted_risk_score || 0) * 100)}/100.` });
+            }
+            entries.push({ color: 'var(--blue)', time: now, text: `<strong>AI engine update</strong> — Risk score ${Math.round((risk.risk_score || 0) * 100)}/100 · ${risk.risk_level} · ${risk.confidence?.label || ''}` });
+            entries.push({ color: 'var(--text-muted)', time: '09:00', text: '<strong>Plan active</strong> — Weekly Shield auto-renewed for ₹49.' });
+
+            log.innerHTML = entries.map(e => `
+      <div class="event-item">
+        <div class="event-dot" style="background:${e.color};"></div>
+        <div class="event-time">${e.time}</div>
+        <div class="event-desc">${e.text}</div>
+      </div>
+    `).join('');
+        }
+
+        /* ── Demo data (API fallback) ─────────────────────────────────────────── */
+        function getDemoData() {
+            return {
+                worker: {
+                    name: "Ravi Kumar", platform: "Swiggy", zone: "Delhi NCR — Laxmi Nagar",
+                    id: "SWG-09124", days_covered: 47, member_since: "Jan 2025"
+                },
+                plan: { plan_name: "Weekly Shield", coverage_cap_inr: 2500, valid_until: "2026-03-16" },
+                current_risk: {
+                    risk_score: 0.7020, risk_level: "HIGH", primary_hazard: "AQI",
+                    rainfall: 87.0, aqi: 312.0, wind_speed: 54.0,
+                    imd_bands: { rainfall: "heavy", aqi: "severe", wind_speed: "fresh" },
+                    confidence: { score: 0.62, label: "HIGH_CONF" },
+                    risk_trend: { trend: "HIGH", message: "High disruption risk expected within 1–2 hours — heavy rainfall and hazardous air quality detected.", eta_hours: 1, contributing_factors: ["heavy rainfall", "hazardous AQI"], confidence: 0.8 },
+                    trend: "increasing", trend_velocity: 0.1503, slope: 0.1503, r_squared: 0.97,
+                    anomaly_flag: false, anomaly_severity: "NONE", anomaly_details: [], max_z_score: 1.4,
+                    predicted_risk_score: 0.85, predicted_risk_level: "HIGH",
+                    risk_category_reason: "Multiple parameters in danger bands. Primary driver: AQI. Score 0.702 exceeds the HIGH threshold (0.60).",
+                    decision_explanation: "Risk is trending upward (slope +0.1503/step, R²=0.97) based on the last 7 readings. AI model predicts escalation to 0.850 (HIGH) within the next 3 observation windows (~15 min). Prediction confidence: 62% based on 7/10 historical data points."
+                },
+                payout_status: {
+                    triggered: true, tier_label: "MILD", payout_percentage: 0.30,
+                    gross_payout: 750, platform_fee: 75, net_payout: 675,
+                    risk_loading: 0.05, claim_adjustment: 1.0, final_payout: 641, effective_payout: 641, amount_inr: 641,
+                    exclusion: { is_excluded: false, exclusion_code: "SAFE" },
+                    fraud_check: {
+                        raw_score: 0, fraud_score: 0.0, fraud_flag: false, verdict: "SAFE",
+                        flag_codes: [], reason: "All fraud checks passed.",
+                        fraud_explanation: "All fraud detection rules passed. No suspicious patterns detected. Fraud score: 0.00 (SAFE threshold ≤ 0.25). Claim approved for automatic processing.",
+                        auto_approve: true, flags: []
+                    },
+                    message: "Automatic payout triggered.", payout_explanation: "MILD tier activated.",
+                    delivery: { method: "UPI Auto-Transfer", upi_id_masked: "rkumar**91@upi", eta_hours: 2 }
+                },
+                actuarial: {
+                    pure_premium: 346.5, loaded_premium: 485.1, premium_adequacy: "UNDER-PRICED",
+                    expected_loss_ratio: 7.07, claims_reserve: 481.25, expected_weekly_payout: 346.5,
+                    event_probability: 0.40, expected_loss: 1000.0, dynamic_premium: 83.4,
+                    risk_loading: 0.05, claim_adjustment: 1.0
+                },
+                last_updated: new Date().toLocaleString('en-IN')
+            };
+        }
+
+        /* ── Boot ─────────────────────────────────────────────────────────────── */
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            // Refresh every 60 seconds
+            setInterval(loadDashboard, 60000);
+        });
+    </script>
+
+</body>
+
+</html>
+
