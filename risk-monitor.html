@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GigGuard AI — Risk Monitor</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Page-specific additions */
+        .gauge-arc {
+            transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .condition-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12.5px;
+        }
+
+        .condition-status:last-child {
+            border-bottom: none;
+        }
+
+        .condition-status .cond-name {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .condition-status .cond-value {
+            font-weight: 600;
+            font-family: var(--font-display);
+            font-size: 14px;
+        }
+
+        .factor-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .factor-name {
+            width: 90px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .factor-bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .factor-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .factor-pct {
+            width: 36px;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .trend-history-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12.5px;
+        }
+
+        .trend-history-row:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <svg class="logo-icon" viewBox="0 0 34 34" fill="none">
+                <path d="M17 2L4 7.5V17C4 24.18 9.68 30.9 17 33C24.32 30.9 30 24.18 30 17V7.5L17 2Z" fill="#f5a523"
+                    fill-opacity="0.15" stroke="#f5a523" stroke-width="1.5" />
+                <path d="M12 17l3.5 3.5L22 12" stroke="#f5a523" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span class="logo-text">GigGuard <span>AI</span></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Dashboard</a></li>
+            <li><a href="risk-monitor.html" class="active">Risk Monitor</a></li>
+            <li><a href="payout.html">Payout</a></li>
+        </ul>
+        <div class="nav-status"><span class="dot"></span>Coverage Active</div>
+    </nav>
+
+    <main class="page-container">
+
+        <div class="page-header">
+            <div class="eyebrow">Risk Monitor</div>
+            <h1>Environmental Risk Dashboard</h1>
+            <p>Live conditions · AI trend detection · Anomaly monitoring · Delhi NCR Zone</p>
+        </div>
+
+        <!-- API Status -->
+        <div class="api-status-bar">
+            <span class="api-dot loading" id="apiDot"></span>
+            <span id="apiStatusText">Loading live risk data…</span>
+        </div>
+
+        <!-- Anomaly Alert -->
+        <div class="anomaly-panel hidden" id="anomalyPanel" style="margin-bottom:20px;">
+            <div class="anomaly-pulse"></div>
+            <div>
+                <div class="anomaly-title">🔬 Sensor Anomaly Detected by AI Engine</div>
+                <div class="anomaly-desc" id="anomalyDesc">—</div>
+            </div>
+        </div>
+
+        <!-- ROW 1: Gauge + Conditions + Trend/Anomaly -->
+        <div class="grid-3" style="margin-bottom:16px;">
+
+            <!-- Risk Gauge -->
+            <div class="card" style="display:flex; flex-direction:column; align-items:center;">
+                <div class="card-title" style="text-align:center; width:100%;">Overall Risk Score</div>
+                <div class="gauge-container">
+                    <svg class="gauge-svg" viewBox="0 0 200 120">
+                        <path d="M 20 105 A 80 80 0 0 1 180 105" fill="none" stroke="#1e2530" stroke-width="14"
+                            stroke-linecap="round" />
+                        <path d="M 20 105 A 80 80 0 0 1 80 27" fill="none" stroke="#22d97a" stroke-width="14"
+                            stroke-linecap="round" opacity="0.4" />
+                        <path d="M 80 27 A 80 80 0 0 1 162 60" fill="none" stroke="#f5a523" stroke-width="14"
+                            stroke-linecap="round" opacity="0.4" />
+                        <path d="M 162 60 A 80 80 0 0 1 180 105" fill="none" stroke="#ff4b5c" stroke-width="14"
+                            stroke-linecap="round" id="criticalArc" />
+                        <circle id="needleDot" cx="100" cy="105" r="8" fill="#ff4b5c" opacity="0" />
+                        <circle id="needleInner" cx="100" cy="105" r="4" fill="#fff" opacity="0" />
+                    </svg>
+                    <div class="gauge-score-text">
+                        <span class="gauge-score-number" id="gaugeNumber" style="color:var(--amber);">—</span>
+                        <span class="gauge-score-label">out of 100</span>
+                    </div>
+                    <div class="risk-level badge-amber" id="riskLevelBadge">—</div>
+                </div>
+                <div style="width:100%;">
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill fill-amber" id="mainRiskBar" style="width:0%;"></div>
+                    </div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:5px;">
+                        <span>0 – Safe</span><span>35 – Medium</span><span>60 – High</span><span>85 – Crit</span>
+                    </div>
+                </div>
+
+                <!-- Trend badge inside gauge card -->
+                <div style="margin-top:14px; text-align:center; width:100%;">
+                    <div class="trend-badge trend-stable" id="trendBadgeGauge" style="display:inline-flex;">
+                        <span class="trend-arrow" id="gaugeTrendArrow">→</span>
+                        <span id="gaugeTrendLabel">Stable</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+                        Velocity: <strong id="gaugeVelocity" style="color:var(--text-secondary);">—</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environmental Conditions -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-title">Environmental Conditions — Live Readings</div>
+
+                <div class="grid-3" style="margin-bottom:20px;">
+
+                    <!-- Rainfall -->
+                    <div class="env-card">
+                        <div class="env-icon">🌧</div>
+                        <div>
+                            <div class="env-metric-value" style="color:#4e9eff;">
+                                <span id="rainfallVal">—</span><span class="env-metric-unit">mm/hr</span>
+                            </div>
+                            <div class="env-metric-label">Rainfall Intensity</div>
+                        </div>
+                        <span class="stat-badge badge-green" id="rainfallBadge">—</span>
+                        <div class="score-bar-wrap" style="margin-top:0;">
+                            <div class="score-bar-track">
+                                <div class="score-bar-fill fill-red" id="rainfallBar"
+                                    style="width:0%; background:linear-gradient(90deg,#4e9eff,#7bb8ff);"></div>
+                            </div>
+                            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">IMD Band: <span
+                                    id="rainfallBand">—</span></div>
+                        </div>
+                    </div>
+
+                    <!-- AQI -->
+                    <div class="env-card">
+                        <div class="env-icon">💨</div>
+                        <div>
+                            <div class="env-metric-value" style="color:var(--amber);">
+                                <span id="aqiVal">—</span><span class="env-metric-unit">µg/m³</span>
+                            </div>
+                            <div class="env-metric-label">AQI — PM2.5</div>
+                        </div>
+                        <span class="stat-badge badge-red" id="aqiBadge">—</span>
+                        <div class="score-bar-wrap" style="margin-top:0;">
+                            <div class="score-bar-track">
+                                <div class="score-bar-fill fill-amber" id="aqiBar" style="width:0%;"></div>
+                            </div>
+                            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">CPCB Band: <span
+                                    id="aqiBand">—</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Wind -->
+                    <div class="env-card">
+                        <div class="env-icon">🌬</div>
+                        <div>
+                            <div class="env-metric-value" style="color:var(--text-primary);">
+                                <span id="windVal">—</span><span class="env-metric-unit">km/h</span>
+                            </div>
+                            <div class="env-metric-label">Wind Speed</div>
+                        </div>
+                        <span class="stat-badge badge-amber" id="windBadge">—</span>
+                        <div class="score-bar-wrap" style="margin-top:0;">
+                            <div class="score-bar-track">
+                                <div class="score-bar-fill fill-amber" id="windBar" style="width:0%;"></div>
+                            </div>
+                            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">Beaufort: <span
+                                    id="windBand">—</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Threshold status -->
+                <div class="section-label">Threshold Status</div>
+                <div class="condition-status">
+                    <span class="cond-name">🌧 Rainfall</span>
+                    <span class="cond-value" id="rainfallThreshVal">—</span>
+                    <span class="stat-badge" id="rainfallThreshBadge">—</span>
+                </div>
+                <div class="condition-status">
+                    <span class="cond-name">💨 AQI</span>
+                    <span class="cond-value" id="aqiThreshVal">—</span>
+                    <span class="stat-badge" id="aqiThreshBadge">—</span>
+                </div>
+                <div class="condition-status">
+                    <span class="cond-name">🌬 Wind Speed</span>
+                    <span class="cond-value" id="windThreshVal">—</span>
+                    <span class="stat-badge" id="windThreshBadge">—</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ROW 2: AI Trend | Anomaly Detection | Predicted Score -->
+        <div class="grid-3" style="margin-bottom:16px;">
+
+            <!-- AI Trend Analysis -->
+            <div class="card">
+                <div class="card-title">📈 AI Trend Analysis</div>
+                <div style="text-align:center; padding:8px 0;">
+                    <div class="trend-badge trend-stable" id="trendBadgeBig"
+                        style="display:inline-flex; font-size:15px; padding:10px 18px;">
+                        <span class="trend-arrow" id="trendArrowBig">→</span>
+                        <span id="trendLabelBig">Stable</span>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="trend-history-row">
+                    <span style="color:var(--text-muted);">Slope</span>
+                    <strong id="trendSlope" style="font-family:var(--font-display);">—</strong>
+                </div>
+                <div class="trend-history-row">
+                    <span style="color:var(--text-muted);">Velocity</span>
+                    <strong id="trendVelocity" style="font-family:var(--font-display);">—</strong>
+                </div>
+                <div class="trend-history-row">
+                    <span style="color:var(--text-muted);">R² (fit quality)</span>
+                    <strong id="trendR2" style="font-family:var(--font-display);">—</strong>
+                </div>
+                <div class="trend-history-row">
+                    <span style="color:var(--text-muted);">Heuristic trend</span>
+                    <span class="stat-badge" id="heuristicTrendBadge">—</span>
+                </div>
+                <div class="trend-history-row" style="border-bottom:none;">
+                    <span style="color:var(--text-muted);">ETA to disruption</span>
+                    <strong id="etaHours" style="color:var(--red);">—</strong>
+                </div>
+            </div>
+
+            <!-- Anomaly Detection -->
+            <div class="card">
+                <div class="card-title">🔬 Anomaly Detection</div>
+                <div style="text-align:center; padding:8px 0 4px;">
+                    <div id="anomalyIcon" style="font-size:44px; margin-bottom:6px;">✅</div>
+                    <div id="anomalyStatusText"
+                        style="font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--green);">No
+                        Anomaly</div>
+                    <div id="anomalySeverityBadge" class="stat-badge badge-green"
+                        style="margin:10px auto 0; display:inline-flex;">NONE</div>
+                </div>
+                <div class="divider"></div>
+                <div class="trend-history-row">
+                    <span style="color:var(--text-muted);">Z-score (max)</span>
+                    <strong id="maxZScore" style="font-family:var(--font-display);">—</strong>
+                </div>
+                <div style="margin-top:10px; font-size:12px; color:var(--text-secondary); line-height:1.6;"
+                    id="anomalyDetails">
+                    All sensor readings within 2σ of historical baseline.
+                </div>
+            </div>
+
+            <!-- Predicted Risk Score -->
+            <div class="card">
+                <div class="card-title">🤖 AI Predicted Risk</div>
+                <div class="predicted-score-display">
+                    <div class="predicted-number" id="predictedScore">—</div>
+                    <div class="predicted-label">Next ~15 min forecast</div>
+                    <div class="predicted-level-badge" id="predictedLevelBadge">— Level</div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">
+                    Current: <strong id="currentScore" style="color:var(--text-primary);">—</strong>
+                    &nbsp;→&nbsp;
+                    Predicted: <strong id="predictedScoreSmall" style="color:var(--blue);">—</strong>
+                </div>
+                <div id="predDelta" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">—</div>
+                <div class="score-bar-wrap" style="margin-top:0;">
+                    <div class="score-bar-label">
+                        <span>Predicted level</span>
+                        <span id="predictedPct" style="color:var(--blue);">—</span>
+                    </div>
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill fill-blue" id="predictedBar" style="width:0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ROW 3: Factor Breakdown | Score Details | AI Explanation -->
+        <div class="grid-3">
+
+            <!-- Risk factor breakdown -->
+            <div class="card">
+                <div class="card-title">Risk Score Composition</div>
+                <div style="margin-top:4px;">
+                    <div class="factor-row">
+                        <div class="factor-name">🌧 Rainfall</div>
+                        <div class="factor-bar-track">
+                            <div class="factor-bar-fill" id="rfBar"
+                                style="width:0%; background:linear-gradient(90deg,#4e9eff,#7bb8ff);"></div>
+                        </div>
+                        <div class="factor-pct" id="rfPct">—</div>
+                    </div>
+                    <div class="factor-row">
+                        <div class="factor-name">💨 AQI</div>
+                        <div class="factor-bar-track">
+                            <div class="factor-bar-fill" id="aqiFactorBar"
+                                style="width:0%; background:linear-gradient(90deg,#f5a523,#ffd166);"></div>
+                        </div>
+                        <div class="factor-pct" id="aqiPct">—</div>
+                    </div>
+                    <div class="factor-row">
+                        <div class="factor-name">🌬 Wind</div>
+                        <div class="factor-bar-track">
+                            <div class="factor-bar-fill" id="wBar"
+                                style="width:0%; background:linear-gradient(90deg,#aaa,#ddd);"></div>
+                        </div>
+                        <div class="factor-pct" id="wPct">—</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:11px; color:var(--text-muted);">
+                    Weights: Rainfall 50% · AQI 30% · Wind 20%<br />
+                    Non-linear amplification: exponent 1.4
+                </div>
+            </div>
+
+            <!-- Score Calculation Details -->
+            <div class="card">
+                <div class="card-title">Score Calculation</div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                    <span style="color:var(--text-secondary);">Algorithm</span>
+                    <span style="font-weight:500;">Weighted AI + Power-law</span>
+                </div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                    <span style="color:var(--text-secondary);">Confidence</span>
+                    <span style="font-weight:500;" id="confDetail">—</span>
+                </div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                    <span style="color:var(--text-secondary);">Primary Hazard</span>
+                    <span style="font-weight:500;" id="primaryHazardDetail">—</span>
+                </div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                    <span style="color:var(--text-secondary);">Risk Score</span>
+                    <span style="font-weight:700; font-size:16px; color:var(--red);" id="scoreDetail">—</span>
+                </div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                    <span style="color:var(--text-secondary);">Risk Level</span>
+                    <span style="font-weight:500;" id="levelDetail">—</span>
+                </div>
+                <div class="risk-detail-row"
+                    style="display:flex; justify-content:space-between; padding:10px 0; font-size:13px;">
+                    <span style="color:var(--text-secondary);">Payout Eligible</span>
+                    <span style="font-weight:500;" id="payoutEligible">—</span>
+                </div>
+                <div style="margin-top:14px;">
+                    <a href="payout.html"
+                        style="display:block; text-align:center; padding:10px; background:rgba(245,165,35,0.1); border:1px solid rgba(245,165,35,0.25); border-radius:var(--radius-sm); font-size:12.5px; font-weight:600; color:var(--amber); text-decoration:none;">
+                        View Payout Simulation →
+                    </a>
+                </div>
+            </div>
+
+            <!-- AI Decision Explanation -->
+            <div class="card" style="border-color:rgba(78,158,255,0.2);">
+                <div class="card-title" style="color:var(--blue);">🤖 AI Reasoning</div>
+                <div class="ai-explanation" id="decisionExp" style="font-size:12.5px; margin-bottom:14px;">
+                    Loading AI explanation…
+                </div>
+                <div
+                    style="font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">
+                    Risk Category Reason
+                </div>
+                <div class="ai-reason" id="catReason" style="font-size:12px;">
+                    Loading…
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:11px; color:var(--text-muted);">
+                    <span class="live-dot"></span>
+                    AI engine · Updated <span id="lastUpdated">—</span>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        GigGuard AI · AI-Powered Parametric Insurance · v4 · Built with ❤️ for Hackathon 2025
+    </footer>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        async function loadRisk() {
+            setApiStatus('loading', 'Loading live risk data…');
+            let data;
+            try {
+                const res = await fetch('http://127.0.0.1:8000/risk', { signal: AbortSignal.timeout(5000) });
+                if (!res.ok) throw new Error();
+                data = await res.json();
+                setApiStatus('live', 'Live data · ' + (data.timestamp || ''));
+            } catch {
+                setApiStatus('offline', 'API offline — showing demo data');
+                data = getDemoRisk();
+            }
+            populate(data);
+        }
+
+        function setApiStatus(state, msg) {
+            $('apiDot').className = 'api-dot ' + state;
+            $('apiStatusText').textContent = msg;
+        }
+
+        function populate(d) {
+            const score = d.risk_score ?? 0;
+            const level = d.risk_level ?? 'LOW';
+            const scoreInt = Math.round(score * 100);
+
+            // Gauge
+            $('gaugeNumber').textContent = scoreInt;
+            $('gaugeNumber').style.color = score > 0.60 ? 'var(--red)' : score > 0.35 ? 'var(--amber)' : 'var(--green)';
+            const lvlBadge = $('riskLevelBadge');
+            lvlBadge.textContent = level;
+            lvlBadge.className = 'risk-level ' + { LOW: 'badge-green', MEDIUM: 'badge-amber', HIGH: 'badge-red', CRITICAL: 'badge-red' }[level];
+            $('mainRiskBar').className = 'score-bar-fill ' + (score > 0.60 ? 'fill-red' : score > 0.35 ? 'fill-amber' : 'fill-green');
+            setTimeout(() => { $('mainRiskBar').style.width = scoreInt + '%'; }, 300);
+
+            // Needle position (approximate)
+            const needleAngle = score * 160 - 80; // maps 0–1 to roughly -80 to +80 degrees around centre
+            const nx = 100 + 72 * Math.cos((needleAngle - 90) * Math.PI / 180);
+            const ny = 105 + 72 * Math.sin((needleAngle - 90) * Math.PI / 180);
+            $('needleDot').setAttribute('cx', nx); $('needleDot').setAttribute('cy', ny);
+            $('needleDot').setAttribute('opacity', '0.9');
+            $('needleInner').setAttribute('cx', nx); $('needleInner').setAttribute('cy', ny);
+            $('needleInner').setAttribute('opacity', '1');
+
+            // Env readings
+            $('rainfallVal').textContent = d.rainfall ?? '—';
+            $('aqiVal').textContent = d.aqi ?? '—';
+            $('windVal').textContent = d.wind_speed ?? '—';
+            $('rainfallBand').textContent = d.imd_bands?.rainfall ?? '—';
+            $('aqiBand').textContent = d.imd_bands?.aqi ?? '—';
+            $('windBand').textContent = d.imd_bands?.wind_speed ?? '—';
+
+            // Env bars (scale to % of critical)
+            const rfPct = Math.min(100, Math.round((d.rainfall ?? 0) / 115.6 * 100));
+            const aqiPct = Math.min(100, Math.round((d.aqi ?? 0) / 250.0 * 100));
+            const wPct = Math.min(100, Math.round((d.wind_speed ?? 0) / 74.0 * 100));
+            setTimeout(() => {
+                $('rainfallBar').style.width = rfPct + '%';
+                $('aqiBar').style.width = aqiPct + '%';
+                $('windBar').style.width = wPct + '%';
+            }, 300);
+
+            const badgeCfg = (val, thresh) => val >= thresh
+                ? { cls: 'badge-red', txt: 'BREACHED' }
+                : { cls: 'badge-green', txt: 'Normal' };
+
+            const rfB = badgeCfg(d.rainfall, 50);
+            $('rainfallBadge').textContent = rfB.txt; $('rainfallBadge').className = 'stat-badge ' + rfB.cls;
+            $('rainfallThreshVal').textContent = (d.rainfall ?? '—') + ' mm/hr';
+            $('rainfallThreshVal').style.color = rfB.cls === 'badge-red' ? 'var(--red)' : 'var(--green)';
+            $('rainfallThreshBadge').textContent = rfB.txt; $('rainfallThreshBadge').className = 'stat-badge ' + rfB.cls;
+
+            const aqiB = badgeCfg(d.aqi, 250);
+            $('aqiBadge').textContent = aqiB.txt; $('aqiBadge').className = 'stat-badge ' + aqiB.cls;
+            $('aqiThreshVal').textContent = (d.aqi ?? '—') + ' µg/m³';
+            $('aqiThreshVal').style.color = aqiB.cls === 'badge-red' ? 'var(--red)' : 'var(--green)';
+            $('aqiThreshBadge').textContent = aqiB.txt; $('aqiThreshBadge').className = 'stat-badge ' + aqiB.cls;
+
+            const wB = badgeCfg(d.wind_speed, 45);
+            $('windBadge').textContent = wB.txt; $('windBadge').className = 'stat-badge ' + wB.cls;
+            $('windThreshVal').textContent = (d.wind_speed ?? '—') + ' km/h';
+            $('windThreshVal').style.color = wB.cls === 'badge-red' ? 'var(--red)' : 'var(--green)';
+            $('windThreshBadge').textContent = wB.txt; $('windThreshBadge').className = 'stat-badge ' + wB.cls;
+
+            // Factor scores
+            const cs = d.component_scores || {};
+            const rfScore = Math.round((cs.rainfall_score ?? 0) * 100);
+            const asScore = Math.round((cs.aqi_score ?? 0) * 100);
+            const wsScore = Math.round((cs.wind_score ?? 0) * 100);
+            setTimeout(() => {
+                $('rfBar').style.width = rfScore + '%';
+                $('aqiFactorBar').style.width = asScore + '%';
+                $('wBar').style.width = wsScore + '%';
+            }, 400);
+            $('rfPct').textContent = rfScore;
+            $('aqiPct').textContent = asScore;
+            $('wPct').textContent = wsScore;
+
+            // Trend
+            const trend = d.trend || 'stable';
+            const trendCfg = {
+                increasing: { arrow: '↑', label: 'Increasing', cls: 'trend-up' },
+                stable: { arrow: '→', label: 'Stable', cls: 'trend-stable' },
+                decreasing: { arrow: '↓', label: 'Decreasing', cls: 'trend-down' },
+            };
+            const tc = trendCfg[trend] || trendCfg.stable;
+
+            for (const [aId, lId, bId] of [
+                ['gaugeTrendArrow', 'gaugeTrendLabel', 'trendBadgeGauge'],
+                ['trendArrowBig', 'trendLabelBig', 'trendBadgeBig'],
+            ]) {
+                $(aId).textContent = tc.arrow;
+                $(lId).textContent = tc.label;
+                $(bId).className = 'trend-badge ' + tc.cls;
+            }
+
+            $('gaugeVelocity').textContent = (d.trend_velocity ?? 0).toFixed(4);
+            $('trendSlope').textContent = (d.slope ?? 0) > 0 ? '+' + (d.slope).toFixed(5) : (d.slope ?? 0).toFixed(5);
+            $('trendVelocity').textContent = (d.trend_velocity ?? 0).toFixed(4);
+            $('trendR2').textContent = (d.r_squared ?? 0).toFixed(3);
+
+            const ht = d.risk_trend?.trend || '—';
+            const htBadge = $('heuristicTrendBadge');
+            htBadge.textContent = ht;
+            htBadge.className = 'stat-badge ' + { HIGH: 'badge-red', RISING: 'badge-amber', LOW: 'badge-green' }[ht] || 'badge-blue';
+
+            const eta = d.risk_trend?.eta_hours;
+            $('etaHours').textContent = eta !== null && eta !== undefined ? eta + '–' + (eta + 1) + ' hours' : 'N/A';
+
+            // Anomaly
+            const anomaly = d.anomaly_flag;
+            const sev = d.anomaly_severity || 'NONE';
+            if (anomaly) {
+                $('anomalyPanel').classList.remove('hidden');
+                $('anomalyDesc').textContent = (d.anomaly_details || []).join(', ') + ' · Z-score: ' + (d.max_z_score ?? 0).toFixed(2);
+            } else {
+                $('anomalyPanel').classList.add('hidden');
+            }
+            $('anomalyIcon').textContent = anomaly ? '🚨' : '✅';
+            $('anomalyStatusText').textContent = anomaly ? 'Anomaly Detected' : 'No Anomaly';
+            $('anomalyStatusText').style.color = anomaly ? 'var(--red)' : 'var(--green)';
+            $('anomalySeverityBadge').textContent = sev;
+            $('anomalySeverityBadge').className = 'stat-badge ' + { NONE: 'badge-green', MILD: 'badge-amber', SEVERE: 'badge-red' }[sev];
+            $('maxZScore').textContent = (d.max_z_score ?? 0).toFixed(2);
+            $('anomalyDetails').textContent = anomaly
+                ? (d.anomaly_details || []).join(' · ')
+                : 'All sensor readings within 2σ of historical baseline.';
+
+            // Predicted
+            const pred = d.predicted_risk_score ?? score;
+            const predLevel = d.predicted_risk_level ?? level;
+            const predPct = Math.round(pred * 100);
+            $('predictedScore').textContent = predPct;
+            $('predictedScore').style.color = pred > 0.60 ? 'var(--red)' : pred > 0.35 ? 'var(--amber)' : 'var(--green)';
+            $('predictedLevelBadge').textContent = predLevel + ' level';
+            $('currentScore').textContent = scoreInt + ' / 100';
+            $('predictedScoreSmall').textContent = predPct + ' / 100';
+            $('predictedPct').textContent = predPct + ' / 100';
+            const delta = pred - score;
+            $('predDelta').textContent = 'Change: ' + (delta >= 0 ? '↑ +' : '↓ ') + Math.abs(Math.round(delta * 100)) + ' pts from current';
+            $('predDelta').style.color = delta > 0.05 ? 'var(--red)' : delta < -0.05 ? 'var(--green)' : 'var(--text-muted)';
+            const predBar = $('predictedBar');
+            predBar.className = 'score-bar-fill ' + (pred > 0.60 ? 'fill-red' : pred > 0.35 ? 'fill-amber' : 'fill-green');
+            setTimeout(() => { predBar.style.width = predPct + '%'; }, 500);
+
+            // Score details
+            $('confDetail').textContent = Math.round((d.confidence?.score ?? 0) * 100) + '% · ' + (d.confidence?.label || '—');
+            $('primaryHazardDetail').textContent = d.primary_hazard || '—';
+            $('scoreDetail').textContent = (score * 100).toFixed(1) + ' / 100';
+            $('levelDetail').textContent = level;
+            $('payoutEligible').textContent = d.payout_triggered ? '✓ Yes' : '✗ No';
+            $('payoutEligible').style.color = d.payout_triggered ? 'var(--green)' : 'var(--text-muted)';
+
+            // AI explanation
+            $('decisionExp').textContent = d.decision_explanation || 'AI reasoning not available.';
+            $('catReason').textContent = d.risk_category_reason || '—';
+            $('lastUpdated').textContent = d.timestamp ? d.timestamp.split(' ')[1] : '—';
+        }
+
+        function getDemoRisk() {
+            return {
+                rainfall: 87.0, aqi: 312.0, wind_speed: 54.0, scenario_label: 'Demo',
+                component_scores: { rainfall_score: 0.62, aqi_score: 0.73, wind_score: 0.57 },
+                risk_score: 0.7020, risk_level: 'HIGH', primary_hazard: 'AQI',
+                imd_bands: { rainfall: 'heavy', aqi: 'severe', wind_speed: 'fresh' },
+                confidence: { score: 0.62, label: 'HIGH_CONF' },
+                risk_trend: { trend: 'HIGH', message: 'High disruption risk expected within 1–2 hours.', eta_hours: 1, contributing_factors: ['heavy rainfall', 'hazardous AQI'], confidence: 0.8 },
+                trend: 'increasing', trend_velocity: 0.1503, slope: 0.1503, r_squared: 0.97,
+                anomaly_flag: false, anomaly_severity: 'NONE', anomaly_details: [], max_z_score: 1.4,
+                predicted_risk_score: 0.85, predicted_risk_level: 'HIGH',
+                risk_category_reason: 'Multiple parameters in danger bands. Score 0.702 exceeds HIGH threshold.',
+                decision_explanation: 'Risk is trending upward (slope +0.1503/step, R²=0.97). AI model predicts escalation to 0.850 (HIGH) within 15 min. Prediction confidence: 62%.',
+                payout_triggered: true, timestamp: new Date().toLocaleTimeString()
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRisk();
+            setInterval(loadRisk, 60000);
+        });
+    </script>
+
+</body>
+
+</html>

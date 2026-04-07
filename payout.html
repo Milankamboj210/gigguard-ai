@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GigGuard AI — Payout Simulation</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .payout-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 32px;
+            background: linear-gradient(160deg, #11141b 0%, #0e1018 100%);
+            border: 1px solid rgba(245, 165, 35, 0.2);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .payout-hero::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(245, 165, 35, 0.10) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        .payout-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(245, 165, 35, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(245, 165, 35, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--green);
+            background: var(--green-dim);
+            border: 1px solid rgba(34, 217, 122, 0.25);
+            border-radius: 99px;
+            padding: 5px 14px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge .pulse {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse-green 1.6s infinite;
+        }
+
+        .hero-amount {
+            font-family: var(--font-display);
+            font-size: 80px;
+            font-weight: 800;
+            color: var(--amber);
+            letter-spacing: -4px;
+            line-height: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-amount .currency {
+            font-size: 40px;
+            vertical-align: super;
+            color: var(--amber-light);
+            letter-spacing: 0;
+        }
+
+        .hero-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-trigger-msg {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--green-dim);
+            border: 1px solid rgba(34, 217, 122, 0.2);
+            border-radius: 99px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--green);
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13.5px;
+        }
+
+        .breakdown-row:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-row .b-key {
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breakdown-row .b-val {
+            font-weight: 600;
+            font-family: var(--font-display);
+            font-size: 15px;
+        }
+
+        .breakdown-row.deduct .b-val {
+            color: var(--red);
+        }
+
+        .breakdown-row.total-row {
+            padding-top: 14px;
+            border-top: 2px solid var(--border);
+            border-bottom: none;
+            margin-top: 4px;
+        }
+
+        .breakdown-row.total-row .b-key {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .breakdown-row.total-row .b-val {
+            font-size: 22px;
+            color: var(--amber);
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <svg class="logo-icon" viewBox="0 0 34 34" fill="none">
+                <path d="M17 2L4 7.5V17C4 24.18 9.68 30.9 17 33C24.32 30.9 30 24.18 30 17V7.5L17 2Z" fill="#f5a523"
+                    fill-opacity="0.15" stroke="#f5a523" stroke-width="1.5" />
+                <path d="M12 17l3.5 3.5L22 12" stroke="#f5a523" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span class="logo-text">GigGuard <span>AI</span></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Dashboard</a></li>
+            <li><a href="risk-monitor.html">Risk Monitor</a></li>
+            <li><a href="payout.html" class="active">Payout</a></li>
+        </ul>
+        <div class="nav-status"><span class="dot"></span>Coverage Active</div>
+    </nav>
+
+    <main class="page-container">
+
+        <div class="page-header">
+            <div class="eyebrow">Payout Simulation</div>
+            <h1>Automatic Payout Processing</h1>
+            <p>AI-powered parametric payout · Risk-adjusted financial model · Delhi NCR Zone</p>
+        </div>
+
+        <div class="api-status-bar">
+            <span class="api-dot loading" id="apiDot"></span>
+            <span id="apiStatusText">Loading payout simulation…</span>
+        </div>
+
+        <!-- Success banner -->
+        <div class="alert-banner alert-success" id="payoutAlert" style="display:none;">
+            <div class="alert-icon">✅</div>
+            <div>
+                <div class="alert-title">Payout Successfully Triggered</div>
+                <div class="alert-desc" id="payoutAlertDesc">—</div>
+            </div>
+        </div>
+
+        <!-- No payout banner -->
+        <div class="alert-banner alert-info" id="noPayoutAlert" style="display:none;">
+            <div class="alert-icon">ℹ️</div>
+            <div>
+                <div class="alert-title">No Payout Triggered</div>
+                <div class="alert-desc" id="noPayoutDesc">Risk score is below the payout threshold. No disruption event
+                    detected.</div>
+            </div>
+        </div>
+
+        <!-- Fraud warning -->
+        <div class="alert-banner alert-danger" id="fraudAlert" style="display:none;">
+            <div class="alert-icon">🛡</div>
+            <div>
+                <div class="alert-title" id="fraudAlertTitle">Fraud Detection Alert</div>
+                <div class="alert-desc" id="fraudAlertDesc">—</div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         PAYOUT HERO
+    ══════════════════════════════════════════════════════ -->
+        <div class="payout-hero">
+            <div class="hero-badge">
+                <span class="pulse"></span>
+                <span id="heroBadgeText">Auto-Triggered Payout</span>
+            </div>
+            <div class="hero-amount">
+                <span class="currency">₹</span><span id="heroAmount">0</span>
+            </div>
+            <div class="hero-sub" id="heroSub">Final payout after all deductions</div>
+            <div class="hero-trigger-msg" id="heroMsg">
+                ✓ Automatic payout triggered due to environmental disruption
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         ROW 1: Coverage Plan | Financial Breakdown
+    ══════════════════════════════════════════════════════ -->
+        <div class="grid-2" style="margin-bottom:16px;">
+
+            <!-- Coverage Plan -->
+            <div class="card">
+                <div class="card-title">Worker Coverage Plan</div>
+                <div
+                    style="display:flex; align-items:center; gap:12px; margin-bottom:18px; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border);">
+                    <div class="worker-avatar" style="width:40px; height:40px; font-size:15px;">RK</div>
+                    <div>
+                        <div style="font-weight:600; font-size:14px;">Ravi Kumar</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">Swiggy · Delhi NCR · ID #SWG-09124
+                        </div>
+                    </div>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Plan Name</span>
+                    <span class="b-val" style="font-size:14px;" id="planName">Weekly Shield</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Coverage Cap</span>
+                    <span class="b-val" style="color:var(--amber);" id="coverageCap">₹2,500</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Payout Tier</span>
+                    <span class="b-val" id="tierLabel">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Tier Percentage</span>
+                    <span class="b-val" id="tierPct">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Risk Score</span>
+                    <span class="b-val" id="riskScoreVal" style="color:var(--red);">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Risk Level</span>
+                    <span id="riskLevelBadge" class="stat-badge badge-amber">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">Delivery</span>
+                    <span class="b-val" style="font-size:13px;">UPI · rkumar**91@upi</span>
+                </div>
+            </div>
+
+            <!-- Full Financial Breakdown -->
+            <div class="card">
+                <div class="card-title">Financial Breakdown</div>
+
+                <div class="breakdown-row">
+                    <span class="b-key">Coverage Cap</span>
+                    <span class="b-val" id="brkCap">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">× Tier Multiplier</span>
+                    <span class="b-val" id="brkTierMul">—</span>
+                </div>
+                <div class="breakdown-row">
+                    <span class="b-key">= Gross Payout</span>
+                    <span class="b-val" id="brkGross" style="color:var(--text-primary);">—</span>
+                </div>
+                <div class="breakdown-row deduct">
+                    <span class="b-key">— Platform Fee (10%)</span>
+                    <span class="b-val" id="brkFee">—</span>
+                </div>
+                <div class="breakdown-row deduct">
+                    <span class="b-key">— Risk Loading (<span id="brkLoadingPct">—</span>)</span>
+                    <span class="b-val" id="brkLoadingAmt">—</span>
+                </div>
+                <div class="breakdown-row deduct">
+                    <span class="b-key">× Claim Freq. Adj.</span>
+                    <span class="b-val" id="brkClaimAdj">—</span>
+                </div>
+                <div class="breakdown-row total-row">
+                    <span class="b-key">✓ Final Transfer</span>
+                    <span class="b-val" id="brkFinal">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         ROW 2: Actuarial | Fraud Status
+    ══════════════════════════════════════════════════════ -->
+        <div class="grid-2" style="margin-bottom:16px;">
+
+            <!-- Actuarial Intelligence -->
+            <div class="card">
+                <div class="card-title">📊 Actuarial Intelligence</div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">Event Probability</div>
+                        <div class="metric-value" id="actEventProb">—</div>
+                        <div class="metric-sub">P(disruption | risk score)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Expected Loss</div>
+                        <div class="metric-value amber" id="actExpLoss">—</div>
+                        <div class="metric-sub">P(event) × coverage cap</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Dynamic Premium</div>
+                        <div class="metric-value" id="actDynPrem">—</div>
+                        <div class="metric-sub">base × (1 + risk_score)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Pure Premium</div>
+                        <div class="metric-value" id="actPurePrem">—</div>
+                        <div class="metric-sub">actuarially fair rate</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary);">
+                    Premium adequacy: <strong id="actAdequacy" style="color:var(--amber);">—</strong>
+                    &nbsp;·&nbsp; Loss ratio: <strong id="actLossRatio">—</strong>
+                </div>
+            </div>
+
+            <!-- Fraud Status -->
+            <div class="card">
+                <div class="card-title">🛡 Fraud Intelligence</div>
+                <div class="fraud-score-display">
+                    <div class="fraud-score-number" id="fraudScore" style="color:var(--green);">0.00</div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Fraud Score (0.0 – 1.0)</div>
+                    <div class="fraud-score-track">
+                        <div class="fraud-score-fill fill-green" id="fraudBar" style="width:0%;"></div>
+                    </div>
+                    <div class="verdict-badge verdict-SAFE" id="fraudVerdict">● SAFE</div>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">
+                    Auto-approve: <strong id="autoApprove" style="color:var(--green);">Yes</strong>
+                    &nbsp;·&nbsp; Rules triggered: <strong id="fraudFlagCount">0</strong>
+                </div>
+                <div class="fraud-explanation-text" id="fraudExplText">All checks passed.</div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         ROW 3: AI Payout Explanation + Processing Steps
+    ══════════════════════════════════════════════════════ -->
+        <div class="grid-2" style="margin-bottom:16px;">
+
+            <!-- AI Payout Explanation -->
+            <div class="card" style="border-color:rgba(78,158,255,0.2);">
+                <div class="ai-panel-header" style="margin-bottom:14px;">
+                    <span class="ai-tag">⚡ AI Engine</span>
+                    <h3 style="font-family:var(--font-display); font-size:14px; font-weight:700;">Payout Decision
+                        Explanation</h3>
+                </div>
+                <div class="ai-explanation" id="payoutExplanation">
+                    Loading AI payout reasoning…
+                </div>
+                <div class="divider"></div>
+                <div
+                    style="font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">
+                    Exclusion Status
+                </div>
+                <div id="exclusionStatus" style="font-size:12px; color:var(--green);">✓ No exclusions apply</div>
+            </div>
+
+            <!-- Processing Steps -->
+            <div class="card">
+                <div class="card-title">Payout Processing Steps</div>
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-num done" id="step1Num">✓</div>
+                        <div class="step-text">
+                            <div class="step-title" style="color:var(--green);">Conditions Detected</div>
+                            <div class="step-desc" id="step1Desc">IMD + CPCB data confirmed environmental disruption.
+                            </div>
+                        </div>
+                        <div class="step-time" id="step1Time">—</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num done" id="step2Num">✓</div>
+                        <div class="step-text">
+                            <div class="step-title" style="color:var(--green);">AI Risk Score Calculated</div>
+                            <div class="step-desc" id="step2Desc">Weighted model computed risk score.</div>
+                        </div>
+                        <div class="step-time" id="step2Time">—</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step3Num">3</div>
+                        <div class="step-text">
+                            <div class="step-title" id="step3Title">Threshold Check</div>
+                            <div class="step-desc" id="step3Desc">Checking if payout threshold is met.</div>
+                        </div>
+                        <div class="step-time" id="step3Time">—</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step4Num">4</div>
+                        <div class="step-text">
+                            <div class="step-title" id="step4Title">Financial Calculation</div>
+                            <div class="step-desc" id="step4Desc">Computing gross, fee, risk loading, and final payout.
+                            </div>
+                        </div>
+                        <div class="step-time">—</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step5Num">5</div>
+                        <div class="step-text">
+                            <div class="step-title" id="step5Title">Fraud Check</div>
+                            <div class="step-desc" id="step5Desc">Running 7-rule fraud detection engine.</div>
+                        </div>
+                        <div class="step-time">—</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step6Num">6</div>
+                        <div class="step-text">
+                            <div class="step-title" id="step6Title">UPI Transfer</div>
+                            <div class="step-desc">rkumar**91@upi · Estimated 2 hours.</div>
+                        </div>
+                        <div class="step-time">~+2 hrs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         INTERACTIVE SIMULATOR
+    ══════════════════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title">Interactive Payout Simulator</div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:20px;">
+                Adjust risk score and coverage to see how the full actuarial payout model calculates in real time.
+            </p>
+
+            <div class="grid-2" style="gap:24px;">
+                <div>
+                    <div class="sim-control">
+                        <span class="sim-label">Risk Score:</span>
+                        <input type="range" id="simRisk" min="0" max="100" value="72" />
+                        <span class="sim-value-display" id="simRiskVal">72</span>
+                    </div>
+                    <div class="sim-control">
+                        <span class="sim-label">Coverage (₹):</span>
+                        <input type="range" id="simCoverage" min="500" max="5000" step="100" value="2500" />
+                        <span class="sim-value-display" id="simCovVal">2,500</span>
+                    </div>
+                    <div class="sim-control">
+                        <span class="sim-label">Claims this week:</span>
+                        <input type="range" id="simClaims" min="1" max="4" step="1" value="1" />
+                        <span class="sim-value-display" id="simClaimVal">1</span>
+                    </div>
+                </div>
+                <div
+                    style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
+                    <div
+                        style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">
+                        Simulated Final Payout</div>
+                    <div style="font-family:var(--font-display); font-size:52px; font-weight:800; color:var(--amber); letter-spacing:-2px;"
+                        id="simResult">₹0</div>
+                    <div id="simBreakdown" style="font-size:12px; color:var(--text-secondary);">—</div>
+                    <div id="simEligible" style="font-size:12px; color:var(--green);">✓ Eligible</div>
+                </div>
+            </div>
+
+            <div class="score-bar-wrap" style="margin-top:16px;">
+                <div class="score-bar-label">
+                    <span>Payout as % of coverage cap</span>
+                    <span id="simPct" style="color:var(--amber); font-weight:600;">0%</span>
+                </div>
+                <div class="score-bar-track">
+                    <div class="score-bar-fill fill-amber" id="simBar" style="width:0%;"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        GigGuard AI · AI-Powered Parametric Insurance · v4 · Built with ❤️ for Hackathon 2025
+    </footer>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const fmt = n => n != null ? '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
+
+        /* ── API fetch ──────────────────────────────────────────────────────── */
+        async function loadPayout() {
+            setApi('loading', 'Loading payout simulation…');
+            let data;
+            try {
+                const res = await fetch('http://127.0.0.1:8000/simulate', { signal: AbortSignal.timeout(5000) });
+                if (!res.ok) throw new Error();
+                data = await res.json();
+                setApi('live', 'Live simulation · ' + (data.timestamp || ''));
+            } catch {
+                setApi('offline', 'API offline — showing demo data');
+                data = demoData();
+            }
+            populate(data);
+        }
+
+        function setApi(state, msg) {
+            $('apiDot').className = 'api-dot ' + state; $('apiStatusText').textContent = msg;
+        }
+
+        /* ── Populate ───────────────────────────────────────────────────────── */
+        function populate(d) {
+            const triggered = d.payout_triggered;
+            const score = d.risk_score ?? 0;
+            const level = d.risk_level ?? 'LOW';
+            const fraud = d.fraud_check || {};
+            const act = d.actuarial || {};
+            const excl = d.exclusion || {};
+
+            const finalPayout = d.final_payout ?? d.effective_payout ?? d.payout ?? 0;
+            const gross = d.gross_payout ?? 0;
+            const fee = d.platform_fee ?? 0;
+            const loading = d.risk_loading ?? 0.05;
+            const adj = d.claim_adjustment ?? 1.0;
+            const pct = d.payout_percentage ?? 0;
+
+            // Hero
+            animateAmount('heroAmount', finalPayout);
+            $('heroBadgeText').textContent = triggered ? 'Auto-Triggered Payout' : 'No Payout';
+            $('heroSub').textContent = 'Final payout after fees, risk loading, and frequency adjustment';
+            $('heroMsg').textContent = triggered
+                ? '✓ Automatic payout triggered due to environmental disruption'
+                : '✗ Risk score below payout threshold — no disruption event';
+            $('heroMsg').style.color = triggered ? 'var(--green)' : 'var(--text-muted)';
+
+            // Banners
+            $('payoutAlert').style.display = triggered && fraud.verdict === 'SAFE' ? 'flex' : 'none';
+            $('noPayoutAlert').style.display = !triggered ? 'flex' : 'none';
+            $('fraudAlert').style.display = fraud.verdict && fraud.verdict !== 'SAFE' ? 'flex' : 'none';
+            if (triggered) {
+                $('payoutAlertDesc').textContent = (d.payout_message || '');
+            }
+            if (fraud.verdict && fraud.verdict !== 'SAFE') {
+                $('fraudAlertTitle').textContent = 'Fraud Alert — ' + fraud.verdict;
+                $('fraudAlertDesc').textContent = fraud.reason || '—';
+            }
+
+            // Plan card
+            $('tierLabel').textContent = d.tier_label || '—';
+            $('tierPct').textContent = Math.round(pct * 100) + '% of cap';
+            $('riskScoreVal').textContent = Math.round(score * 100) + ' / 100';
+            $('riskScoreVal').style.color = score > 0.60 ? 'var(--red)' : score > 0.35 ? 'var(--amber)' : 'var(--green)';
+            const lvlBadge = $('riskLevelBadge');
+            lvlBadge.textContent = level;
+            lvlBadge.className = 'stat-badge ' + ({ LOW: 'badge-green', MEDIUM: 'badge-amber', HIGH: 'badge-red', CRITICAL: 'badge-red' }[level] || 'badge-amber');
+
+            // Breakdown
+            $('brkCap').textContent = fmt(d.coverage_cap);
+            $('brkTierMul').textContent = Math.round(pct * 100) + '%';
+            $('brkGross').textContent = fmt(gross);
+            $('brkFee').textContent = '-' + fmt(fee);
+            $('brkLoadingPct').textContent = Math.round(loading * 100) + '%';
+
+            // Risk loading amount
+            const loadingAmt = Math.round((gross - fee) * loading);
+            $('brkLoadingAmt').textContent = '-' + fmt(loadingAmt);
+            $('brkClaimAdj').textContent = Math.round(adj * 100) + '% of remaining';
+            $('brkFinal').textContent = fmt(finalPayout);
+
+            // Actuarial
+            $('actEventProb').textContent = act.event_probability != null ? Math.round(act.event_probability * 100) + '%' : '—';
+            $('actExpLoss').textContent = fmt(act.expected_loss);
+            $('actDynPrem').textContent = fmt(act.dynamic_premium);
+            $('actPurePrem').textContent = fmt(act.pure_premium);
+            $('actAdequacy').textContent = act.premium_adequacy || '—';
+            $('actLossRatio').textContent = act.expected_loss_ratio != null ? act.expected_loss_ratio.toFixed(2) : '—';
+
+            // Fraud
+            const fs = fraud.fraud_score ?? 0;
+            $('fraudScore').textContent = fs.toFixed(2);
+            $('fraudScore').style.color = fs > 0.50 ? 'var(--red)' : fs > 0.25 ? 'var(--amber)' : 'var(--green)';
+            $('fraudBar').className = 'fraud-score-fill ' + (fs > 0.50 ? 'fill-red' : fs > 0.25 ? 'fill-amber' : 'fill-green');
+            setTimeout(() => { $('fraudBar').style.width = (fs * 100) + '%'; }, 400);
+            const vBadge = $('fraudVerdict');
+            vBadge.textContent = '● ' + (fraud.verdict || 'SAFE');
+            vBadge.className = 'verdict-badge verdict-' + (fraud.verdict || 'SAFE');
+            $('autoApprove').textContent = fraud.auto_approve ? 'Yes' : 'No';
+            $('autoApprove').style.color = fraud.auto_approve ? 'var(--green)' : 'var(--red)';
+            $('fraudFlagCount').textContent = (fraud.flags || []).length;
+            $('fraudExplText').textContent = fraud.fraud_explanation || fraud.reason || '—';
+
+            // AI explanation
+            $('payoutExplanation').textContent = d.payout_explanation || d.payout_message || '—';
+
+            // Exclusion
+            if (excl.is_excluded) {
+                $('exclusionStatus').textContent = '⚠ ' + excl.exclusion_code + ': ' + excl.reason?.slice(0, 80) + '…';
+                $('exclusionStatus').style.color = excl.is_partial ? 'var(--amber)' : 'var(--red)';
+            } else {
+                $('exclusionStatus').textContent = '✓ No exclusions apply. Claim eligible for full payout.';
+                $('exclusionStatus').style.color = 'var(--green)';
+            }
+
+            // Processing steps
+            const now = d.timestamp ? d.timestamp.split(' ')[1] : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            updateStep(1, 'done', 'Conditions Detected', 'Rainfall ' + d.rainfall + ' mm/hr, AQI ' + d.aqi + ' µg/m³ confirmed.', now);
+            updateStep(2, 'done', 'Risk Score Calculated', 'AI model computed ' + Math.round(score * 100) + '/100 (' + level + ').', now);
+            if (triggered) {
+                updateStep(3, 'done', 'Threshold Met', 'Score ≥ 0.60. ' + d.tier_label + ' tier activated.', now);
+                updateStep(4, 'done', 'Payout Calculated', fmt(gross) + ' gross → ' + fmt(fee) + ' fee → ' + fmt(finalPayout) + ' final.', now);
+                if (fraud.verdict === 'SAFE') {
+                    updateStep(5, 'done', 'Fraud Check Passed', 'All 7 rules clear. Auto-approved.', now);
+                    updateStep(6, 'active', 'UPI Transfer Initiated', 'rkumar**91@upi · Within 2 hours.', now);
+                } else {
+                    updateStep(5, '', 'Fraud Flag Raised', 'Verdict: ' + fraud.verdict + '. Payout held.', now);
+                    updateStep(6, '', 'Transfer Pending', 'Awaiting fraud review outcome.', now);
+                }
+            } else {
+                updateStep(3, '', 'Threshold Not Met', 'Score ' + Math.round(score * 100) + '/100 < 60. No payout.', now);
+                updateStep(4, '', 'Not Applicable', 'No payout to calculate.', now);
+                updateStep(5, '', 'Not Applicable', 'Fraud check skipped.', now);
+                updateStep(6, '', 'No Transfer', 'No disruption event detected.', now);
+            }
+        }
+
+        function updateStep(num, state, title, desc, time) {
+            const n = $('step' + num + 'Num');
+            const t = $('step' + num + 'Title');
+            const d = $('step' + num + 'Desc');
+            if (!n) return;
+            if (state === 'done') {
+                n.className = 'step-num done'; n.textContent = '✓';
+                if (t) t.style.color = 'var(--green)';
+            } else if (state === 'active') {
+                n.className = 'step-num active'; n.textContent = '→';
+                if (t) t.style.color = 'var(--amber)';
+            } else {
+                n.className = 'step-num'; n.textContent = num;
+                if (t) t.style.color = 'var(--text-secondary)';
+            }
+            if (t) t.textContent = title;
+            if (d) d.textContent = desc;
+        }
+
+        /* ── Animate counter ──────────────────────────────────────────────────── */
+        function animateAmount(id, target) {
+            const el = $(id); let count = 0;
+            const step = Math.max(1, Math.ceil(target / 60));
+            const iv = setInterval(() => {
+                count = Math.min(count + step, target);
+                el.textContent = Number(count).toLocaleString('en-IN');
+                if (count >= target) clearInterval(iv);
+            }, 18);
+        }
+
+        /* ── Interactive simulator ────────────────────────────────────────────── */
+        const TIERS = [[0.60, 0.00], [0.75, 0.30], [0.90, 0.50], [1.01, 0.80]];
+        const FREQ = { 1: 1.0, 2: 0.80, 3: 0.60, 4: 0.40 };
+
+        function calcSim() {
+            const risk = parseInt($('simRisk').value) / 100;
+            const cap = parseInt($('simCoverage').value);
+            const cl = parseInt($('simClaims').value);
+
+            $('simRiskVal').textContent = Math.round(risk * 100);
+            $('simCovVal').textContent = Number(cap).toLocaleString('en-IN');
+            $('simClaimVal').textContent = cl;
+
+            let pct = 0;
+            for (const [thresh, p] of TIERS) { if (risk < thresh) { pct = p; break; } }
+
+            const gross = cap * pct;
+            const fee = gross * 0.10;
+            const netPre = gross - fee;
+            const loading = Math.min(0.30, 0.05 + Math.max(0, cl - 1) * 0.08);
+            const adj = FREQ[cl] || 0.40;
+            const final = Math.round(netPre * (1 - loading) * adj);
+
+            const simBar = $('simBar');
+            const pctOfCap = cap > 0 ? Math.round(final / cap * 100) : 0;
+
+            if (pct === 0) {
+                $('simResult').textContent = '₹0';
+                $('simEligible').textContent = '✕ Score < 0.60 — not eligible';
+                $('simEligible').style.color = 'var(--text-muted)';
+                $('simBreakdown').textContent = 'Increase risk score above 60 to trigger payout.';
+                simBar.style.width = '0%';
+                simBar.className = 'score-bar-fill fill-green';
+            } else {
+                $('simResult').textContent = '₹' + Number(final).toLocaleString('en-IN');
+                $('simEligible').textContent = '✓ Payout eligible (score ≥ ' + Math.round(TIERS.find(([t]) => risk < t)?.[0] * 100 || 60) + ')';
+                $('simEligible').style.color = 'var(--green)';
+                $('simBreakdown').textContent = '₹' + gross.toFixed(0) + ' gross − ₹' + fee.toFixed(0) + ' fee − ' + Math.round(loading * 100) + '% loading × ' + Math.round(adj * 100) + '% adj';
+                simBar.className = 'score-bar-fill ' + (risk > 0.60 ? 'fill-amber' : 'fill-green');
+                setTimeout(() => { simBar.style.width = pctOfCap + '%'; }, 100);
+            }
+            $('simPct').textContent = pctOfCap + '%';
+        }
+
+        /* ── Demo data ────────────────────────────────────────────────────────── */
+        function demoData() {
+            return {
+                rainfall: 87.0, aqi: 312.0, wind_speed: 54.0,
+                risk_score: 0.7020, risk_level: 'HIGH',
+                payout_triggered: true, tier_label: 'MILD', payout_percentage: 0.30,
+                coverage_cap: 2500, gross_payout: 750, platform_fee: 75, net_payout: 675,
+                risk_loading: 0.05, claim_adjustment: 1.0, final_payout: 641, effective_payout: 641, payout: 641,
+                payout_message: 'Automatic payout triggered — MILD tier (30% of cap).',
+                payout_explanation: 'MILD tier activated (30% of coverage cap). Gross payout: ₹750. Platform operating fee (10%): −₹75. Net payout: ₹675. Risk loading factor 5% applied: −₹34. Final transfer to worker UPI: ₹641. Event probability at current risk state: 40%. Expected loss: ₹1,000. Risk-adjusted premium this period: ₹83/week.',
+                exclusion: { is_excluded: false, exclusion_code: 'SAFE', reason: 'No exclusions apply.' },
+                fraud_check: { raw_score: 0, fraud_score: 0.0, fraud_flag: false, verdict: 'SAFE', flags: [], flag_codes: [], reason: 'All fraud checks passed.', fraud_explanation: 'All fraud detection rules passed. No suspicious patterns detected. Fraud score: 0.00. Claim approved for automatic processing.', auto_approve: true },
+                actuarial: { event_probability: 0.40, expected_loss: 1000, dynamic_premium: 83.4, pure_premium: 346.5, premium_adequacy: 'UNDER-PRICED', expected_loss_ratio: 7.07, claims_reserve: 481.25 },
+                timestamp: new Date().toLocaleString('en-IN')
+            };
+        }
+
+        /* ── Boot ─────────────────────────────────────────────────────────────── */
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPayout();
+
+            // Simulator listeners
+            ['simRisk', 'simCoverage', 'simClaims'].forEach(id => {
+                $(id).addEventListener('input', calcSim);
+            });
+            calcSim();
+        });
+    </script>
+
+</body>
+
+</html>
